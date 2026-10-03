@@ -260,3 +260,4 @@ All protected endpoints require a valid JWT issued after successful authenticati
 - **Scalability** — Redis-backed queues allow agent workloads to scale asynchronously
 - **Security** — JWT-based auth and OAuth isolate credentials from business logic
 - **Maintainability** — domain-driven backend structure keeps each business area self-contained
+# auto-fte
