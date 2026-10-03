@@ -1,0 +1,74 @@
+# ═══════════════════════════════════════════════════════════════
+# Backend .gitignore — Digital FTE
+# ═══════════════════════════════════════════════════════════════
+
+# ─── Python ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+
+# ─── Virtual environments ────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ─── Environment / secrets ───────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# ─── Logs ────────────────────────────────────────────────────
+*.log
+server_test.log
+logs/
+*.pid
+
+# ─── IDE / editor ────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ─── Testing / coverage ──────────────────────────────────────
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.cache
+coverage.xml
+*.cover
+.hypothesis/
+
+# ─── Database / data ─────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+data/
+db/
+
+# ─── Docker / dev artifacts ──────────────────────────────────
+docker-compose.override.yml
+*.pid
+
+# ─── Type checking / linters ─────────────────────────────────
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json

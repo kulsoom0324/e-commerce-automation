@@ -1,0 +1,940 @@
+﻿(function () {
+    "use strict";
+
+    const API_URL =
+        window.DFTE_CHATBOT_API || "/chatbot/query";
+
+    let selectedLanguage = null;
+    let sending = false;
+
+    let conversationId =
+        Number(
+            localStorage.getItem(
+                "dfte_free_conversation_id"
+            )
+        ) || null;
+
+    // =========================================================
+    // UNICODE HELPER
+    // =========================================================
+
+    function U(...codes) {
+        return String.fromCodePoint(...codes);
+    }
+
+    // Common characters
+    const HAND = U(0x1F44B);
+    const ENGLAND_FLAG = U(0x1F1EC, 0x1F1E7);
+    const PAKISTAN_FLAG = U(0x1F1F5, 0x1F1F0);
+    const BULLET = U(0x25CF);
+    const CLOSE = U(0x00D7);
+    const SEND = U(0x27A4);
+
+    // Urdu text
+    const URDU = {
+        label: U(
+            0x0627, 0x0631, 0x062F, 0x0648
+        ),
+
+        welcome: U(
+            0x0633, 0x0644, 0x0627, 0x0645,
+            0x0020,
+            0x0639, 0x0644, 0x06CC, 0x06A9, 0x0645,
+            0x0021,
+            0x0020,
+            0x1F44B,
+            0x0020,
+            0x0622, 0x062C,
+            0x0020,
+            0x0645, 0x06CC, 0x06BA,
+            0x0020,
+            0x0622, 0x067E,
+            0x0020,
+            0x06A9, 0x06CC,
+            0x0020,
+            0x06A9, 0x06CC, 0x0633, 0x06D2,
+            0x0020,
+            0x0645, 0x062F, 0x062F,
+            0x0020,
+            0x06A9, 0x0631,
+            0x0020,
+            0x0633, 0x06A9, 0x062A, 0x0627,
+            0x0020,
+            0x06C1, 0x0648, 0x06BA,
+            0x061F
+        ),
+
+        placeholder: U(
+            0x0627, 0x067E, 0x0646, 0x0627,
+            0x0020,
+            0x0633, 0x0648, 0x0627, 0x0644,
+            0x0020,
+            0x0644, 0x06A9, 0x06BE, 0x06CC, 0x06BA,
+            0x002E, 0x002E, 0x002E
+        ),
+
+        title: U(
+            0x0688, 0x06CC, 0x062C, 0x06CC,
+            0x0679, 0x0644,
+            0x0020,
+            0x0627, 0x06CC,
+            0x0020,
+            0x0622, 0x0626, 0x06CC,
+            0x0020,
+            0x0627, 0x0633, 0x0633, 0x0633, 0x0679, 0x0646, 0x0679
+        ),
+
+        online: U(
+            0x25CF,
+            0x0020,
+            0x0622, 0x0646,
+            0x0020,
+            0x0644, 0x0627, 0x0626, 0x0646
+        ),
+
+        thinking: U(
+            0x0633, 0x0648, 0x0686,
+            0x0020,
+            0x0631, 0x06C1, 0x0627,
+            0x0020,
+            0x06C1, 0x0648, 0x06BA,
+            0x002E, 0x002E, 0x002E
+        ),
+
+        error: U(
+            0x0645, 0x0639, 0x0630, 0x0631, 0x062A,
+            0x060C,
+            0x0020,
+            0x06A9, 0x0686, 0x06BE,
+            0x0020,
+            0x0645, 0x0633, 0x0626, 0x0644, 0x06C1,
+            0x0020,
+            0x067E, 0x06CC, 0x0634,
+            0x0020,
+            0x0622, 0x06CC, 0x0627,
+            0x06D4,
+            0x0020,
+            0x0628, 0x0631, 0x0627, 0x06C1,
+            0x0020,
+            0x06A9, 0x0631, 0x0645,
+            0x0020,
+            0x062F, 0x0648, 0x0628, 0x0627, 0x0631, 0x06C1,
+            0x0020,
+            0x06A9, 0x0648, 0x0634, 0x0634,
+            0x0020,
+            0x06A9, 0x0631, 0x06CC, 0x06BA,
+            0x06D4
+        )
+    };
+
+    // =========================================================
+    // GET JWT
+    // =========================================================
+
+    function getToken() {
+        const possibleKeys = [
+            "access_token",
+            "token",
+            "jwt"
+        ];
+
+        for (const key of possibleKeys) {
+            const token =
+                localStorage.getItem(key);
+
+            if (token) {
+                return token;
+            }
+        }
+
+        return null;
+    }
+
+    // =========================================================
+    // CREATE CHATBOT
+    // =========================================================
+
+    function createChatbot() {
+
+        if (
+            document.getElementById(
+                "dfte-chatbot-root"
+            )
+        ) {
+            return;
+        }
+
+        const root =
+            document.createElement("div");
+
+        root.id =
+            "dfte-chatbot-root";
+
+        root.innerHTML = `
+            <!-- FLOATING ROBOT -->
+            <button
+                id="dfte-launcher"
+                class="dfte-launcher"
+                aria-label="Open Digital FTE chatbot"
+                type="button"
+            >
+                <img
+                    src="/chatbot_free/digital_fte_robot.png"
+                    alt="Digital FTE AI Assistant"
+                >
+            </button>
+
+            <!-- GREETING POPUP -->
+            <div
+                id="dfte-greeting"
+                class="dfte-greeting"
+            >
+                Hi! ${HAND} How can I help you?
+            </div>
+
+            <!-- CHAT WINDOW -->
+            <div
+                id="dfte-window"
+                class="dfte-window"
+            >
+
+                <!-- HEADER -->
+                <div class="dfte-header">
+
+                    <div class="dfte-brand">
+
+                        <div class="dfte-logo">
+                            <img
+                                src="/chatbot_free/digital_fte_robot.png"
+                                alt="Digital FTE"
+                            >
+                        </div>
+
+                        <div>
+
+                            <div class="dfte-title">
+                                Digital FTE AI Assistant
+                            </div>
+
+                            <div class="dfte-status">
+                                ${BULLET} Online
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <button
+                        id="dfte-close"
+                        class="dfte-close"
+                        aria-label="Close chatbot"
+                        type="button"
+                    >
+                        ${CLOSE}
+                    </button>
+
+                </div>
+
+                <!-- BODY -->
+                <div
+                    id="dfte-body"
+                    class="dfte-body"
+                >
+
+                    <!-- LANGUAGE SCREEN -->
+                    <div
+                        id="dfte-language-screen"
+                        class="dfte-language-screen"
+                    >
+
+                        <h3>
+                            Hi! ${HAND}
+                        </h3>
+
+                        <p>
+                            I'm your Digital FTE AI Assistant.
+                            I can answer questions about the
+                            platform and your connected store.
+                        </p>
+
+                        <div
+                            class="dfte-language-question"
+                        >
+                            Would you like to talk?
+
+                            <span>
+                                Please select your language:
+                            </span>
+
+                        </div>
+
+                        <div
+                            class="language-buttons"
+                        >
+
+                            <!-- ENGLISH -->
+                            <button
+                                class="dfte-language-btn"
+                                data-language="english"
+                                type="button"
+                            >
+                                <span class="flag">
+                                    ${ENGLAND_FLAG}
+                                </span>
+
+                                <span>
+                                    English
+                                </span>
+                            </button>
+
+                            <!-- URDU -->
+                            <button
+                                class="dfte-language-btn"
+                                data-language="urdu"
+                                type="button"
+                            >
+                                <span class="flag">
+                                    ${PAKISTAN_FLAG}
+                                </span>
+
+                                <span>
+                                    ${URDU.label}
+                                </span>
+                            </button>
+
+                            <!-- ROMAN URDU -->
+                            <button
+                                class="dfte-language-btn"
+                                data-language="roman_urdu"
+                                type="button"
+                            >
+                                <span class="flag">
+                                    ${PAKISTAN_FLAG}
+                                </span>
+
+                                <span>
+                                    Roman Urdu
+                                </span>
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                    <!-- MESSAGES -->
+                    <div
+                        id="dfte-messages"
+                        class="dfte-messages"
+                    ></div>
+
+                </div>
+
+                <!-- FOOTER -->
+                <div
+                    id="dfte-footer"
+                    class="dfte-footer"
+                    style="display: none;"
+                >
+
+                    <div class="dfte-input-row">
+
+                        <textarea
+                            id="dfte-input"
+                            class="dfte-input"
+                            rows="1"
+                            placeholder="Ask something..."
+                        ></textarea>
+
+                        <button
+                            id="dfte-send"
+                            class="dfte-send"
+                            type="button"
+                            aria-label="Send message"
+                        >
+                            ${SEND}
+                        </button>
+
+                    </div>
+
+                    <div class="dfte-footer-text">
+                        Free Plan - Read-only assistant
+                    </div>
+
+                </div>
+
+            </div>
+        `;
+
+        document.body.appendChild(root);
+
+        const launcher =
+            document.getElementById(
+                "dfte-launcher"
+            );
+
+        const chatWindow =
+            document.getElementById(
+                "dfte-window"
+            );
+
+        const greeting =
+            document.getElementById(
+                "dfte-greeting"
+            );
+
+        const closeButton =
+            document.getElementById(
+                "dfte-close"
+            );
+
+        launcher.addEventListener(
+            "click",
+            function () {
+
+                chatWindow.classList.add(
+                    "active"
+                );
+
+                launcher.style.display =
+                    "none";
+
+                greeting.classList.add(
+                    "hidden"
+                );
+            }
+        );
+
+        greeting.addEventListener(
+            "click",
+            function () {
+
+                chatWindow.classList.add(
+                    "active"
+                );
+
+                launcher.style.display =
+                    "none";
+
+                greeting.classList.add(
+                    "hidden"
+                );
+            }
+        );
+
+        closeButton.addEventListener(
+            "click",
+            function () {
+
+                chatWindow.classList.remove(
+                    "active"
+                );
+
+                launcher.style.display =
+                    "flex";
+            }
+        );
+
+        document
+            .querySelectorAll(
+                ".dfte-language-btn"
+            )
+            .forEach(
+                function (button) {
+
+                    button.addEventListener(
+                        "click",
+                        function () {
+
+                            selectLanguage(
+                                this.dataset.language
+                            );
+                        }
+                    );
+                }
+            );
+
+        document
+            .getElementById(
+                "dfte-send"
+            )
+            .addEventListener(
+                "click",
+                sendMessage
+            );
+
+        document
+            .getElementById(
+                "dfte-input"
+            )
+            .addEventListener(
+                "keydown",
+                function (event) {
+
+                    if (
+                        event.key === "Enter" &&
+                        !event.shiftKey
+                    ) {
+
+                        event.preventDefault();
+
+                        sendMessage();
+                    }
+                }
+            );
+    }
+
+    // =========================================================
+    // LANGUAGE SELECTION
+    // =========================================================
+
+    function selectLanguage(language) {
+
+        selectedLanguage =
+            language;
+
+        const languageScreen =
+            document.getElementById(
+                "dfte-language-screen"
+            );
+
+        const footer =
+            document.getElementById(
+                "dfte-footer"
+            );
+
+        const title =
+            document.querySelector(
+                ".dfte-title"
+            );
+
+        const status =
+            document.querySelector(
+                ".dfte-status"
+            );
+
+        const input =
+            document.getElementById(
+                "dfte-input"
+            );
+
+        languageScreen.style.display =
+            "none";
+
+        footer.style.display =
+            "block";
+
+        const welcomeMessages = {
+
+            english:
+                "Hi! " +
+                HAND +
+                " How can I help you today?",
+
+            urdu:
+                URDU.welcome,
+
+            roman_urdu:
+                "Assalam-o-Alaikum! " +
+                HAND +
+                " Aaj main aapki kis tarah madad kar sakta hoon?"
+        };
+
+        const placeholders = {
+
+            english:
+                "Ask something...",
+
+            urdu:
+                URDU.placeholder,
+
+            roman_urdu:
+                "Apna sawal likhein..."
+        };
+
+        if (language === "urdu") {
+
+            title.textContent =
+                URDU.title;
+
+            status.textContent =
+                URDU.online;
+
+            input.dir =
+                "rtl";
+
+            input.style.textAlign =
+                "right";
+
+        } else {
+
+            title.textContent =
+                "Digital FTE AI Assistant";
+
+            status.textContent =
+                BULLET +
+                " Online";
+
+            input.dir =
+                "ltr";
+
+            input.style.textAlign =
+                "left";
+        }
+
+        input.placeholder =
+            placeholders[language];
+
+        addMessage(
+            "bot",
+            welcomeMessages[language]
+        );
+    }
+
+    // =========================================================
+    // ADD MESSAGE
+    // =========================================================
+
+    function addMessage(
+        type,
+        text
+    ) {
+
+        const messages =
+            document.getElementById(
+                "dfte-messages"
+            );
+
+        const message =
+            document.createElement(
+                "div"
+            );
+
+        message.className =
+            "dfte-message " +
+            type;
+
+        const bubble =
+            document.createElement(
+                "div"
+            );
+
+        bubble.className =
+            "dfte-bubble";
+
+        bubble.textContent =
+            text;
+
+        if (
+            selectedLanguage ===
+            "urdu"
+        ) {
+
+            bubble.dir =
+                "rtl";
+
+            bubble.style.direction =
+                "rtl";
+
+            bubble.style.textAlign =
+                "right";
+
+        } else {
+
+            bubble.dir =
+                "ltr";
+
+            bubble.style.direction =
+                "ltr";
+
+            bubble.style.textAlign =
+                "left";
+        }
+
+        message.appendChild(
+            bubble
+        );
+
+        messages.appendChild(
+            message
+        );
+
+        scrollToBottom();
+    }
+
+    // =========================================================
+    // TYPING
+    // =========================================================
+
+    function addTyping() {
+
+        const messages =
+            document.getElementById(
+                "dfte-messages"
+            );
+
+        const message =
+            document.createElement(
+                "div"
+            );
+
+        message.id =
+            "dfte-typing";
+
+        message.className =
+            "dfte-message bot";
+
+        const bubble =
+            document.createElement(
+                "div"
+            );
+
+        bubble.className =
+            "dfte-bubble";
+
+        bubble.textContent =
+            selectedLanguage === "urdu"
+                ? URDU.thinking
+                : selectedLanguage === "roman_urdu"
+                    ? "Soch raha hoon..."
+                    : "Thinking...";
+
+        if (
+            selectedLanguage ===
+            "urdu"
+        ) {
+
+            bubble.dir =
+                "rtl";
+
+            bubble.style.direction =
+                "rtl";
+
+            bubble.style.textAlign =
+                "right";
+        }
+
+        message.appendChild(
+            bubble
+        );
+
+        messages.appendChild(
+            message
+        );
+
+        scrollToBottom();
+    }
+
+    function removeTyping() {
+
+        const typing =
+            document.getElementById(
+                "dfte-typing"
+            );
+
+        if (typing) {
+            typing.remove();
+        }
+    }
+
+    // =========================================================
+    // SEND MESSAGE
+    // =========================================================
+
+    async function sendMessage() {
+
+        if (
+            sending ||
+            !selectedLanguage
+        ) {
+            return;
+        }
+
+        const input =
+            document.getElementById(
+                "dfte-input"
+            );
+
+        const sendButton =
+            document.getElementById(
+                "dfte-send"
+            );
+
+        const query =
+            input.value.trim();
+
+        if (!query) {
+            return;
+        }
+
+        sending = true;
+
+        sendButton.disabled =
+            true;
+
+        input.value = "";
+
+        addMessage(
+            "user",
+            query
+        );
+
+        addTyping();
+
+        try {
+
+            const headers = {
+
+                "Accept":
+                    "application/json",
+
+                "Content-Type":
+                    "application/json"
+            };
+
+            const token =
+                getToken();
+
+            if (token) {
+
+                headers[
+                    "Authorization"
+                ] =
+                    "Bearer " + token;
+            }
+
+            const response =
+                await fetch(
+                    API_URL,
+                    {
+                        method:
+                            "POST",
+
+                        headers:
+                            headers,
+
+                        body:
+                            JSON.stringify({
+                                query:
+                                    query,
+
+                                preferred_language:
+                                    selectedLanguage,
+
+                                conversation_id:
+                                    conversationId
+                            })
+                    }
+                );
+
+            const result =
+                await response.json();
+
+            removeTyping();
+
+            if (!response.ok) {
+
+                throw new Error(
+                    result.detail ||
+                    "Chatbot request failed"
+                );
+            }
+
+            conversationId =
+                result.conversation_id ||
+                conversationId;
+
+            if (conversationId) {
+
+                localStorage.setItem(
+                    "dfte_free_conversation_id",
+                    String(conversationId)
+                );
+            }
+
+            addMessage(
+                "bot",
+                result.answer ||
+                result.message ||
+                (
+                    selectedLanguage === "urdu"
+                        ? URDU.error
+                        : selectedLanguage === "roman_urdu"
+                            ? "Request processed successfully."
+                            : "Request processed successfully."
+                )
+            );
+
+        } catch (error) {
+
+            removeTyping();
+
+            const errorMessages = {
+
+                english:
+                    "Sorry, something went wrong. Please try again.",
+
+                urdu:
+                    URDU.error,
+
+                roman_urdu:
+                    "Sorry, kuch masla hogaya. Dobara try karein."
+            };
+
+            addMessage(
+                "bot",
+                errorMessages[
+                    selectedLanguage
+                ]
+            );
+
+            console.error(
+                "Digital FTE Chatbot:",
+                error
+            );
+
+        } finally {
+
+            sending = false;
+
+            sendButton.disabled =
+                false;
+        }
+    }
+
+    // =========================================================
+    // SCROLL
+    // =========================================================
+
+    function scrollToBottom() {
+
+        const body =
+            document.getElementById(
+                "dfte-body"
+            );
+
+        if (body) {
+            body.scrollTop =
+                body.scrollHeight;
+        }
+    }
+
+    // =========================================================
+    // INITIALIZE
+    // =========================================================
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            createChatbot
+        );
+
+    } else {
+
+        createChatbot();
+    }
+
+})();

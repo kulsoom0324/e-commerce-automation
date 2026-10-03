@@ -1,0 +1,573 @@
+#dfte-pro-chatbot-root,
+#dfte-pro-chatbot-root * {
+    box-sizing: border-box;
+}
+
+/* =========================================================
+   LAUNCHER MESSAGE
+   ========================================================= */
+
+.dfte-pro-launcher-message {
+    position: fixed;
+    right: 24px;
+    bottom: 100px;
+
+    background: #08111f;
+    color: #ffffff;
+
+    padding: 10px 14px;
+
+    border-radius: 12px;
+
+    border: 1px solid rgba(255, 193, 7, 0.25);
+
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 2px;
+
+    opacity: 0;
+
+    transform: translateY(8px);
+
+    pointer-events: none;
+
+    transition:
+        opacity 0.3s ease,
+        transform 0.3s ease;
+
+    z-index: 99999;
+}
+
+.dfte-pro-launcher-message.show {
+    opacity: 1;
+
+    transform: translateY(0);
+}
+
+.dfte-pro-launcher-message span {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.dfte-pro-launcher-message small {
+    font-size: 11px;
+    color: #aeb7c7;
+}
+
+
+/* =========================================================
+   ROBOT LAUNCHER
+   ========================================================= */
+
+.dfte-pro-launcher {
+    position: fixed;
+
+    right: 24px;
+    bottom: 24px;
+
+    width: 68px;
+    height: 68px;
+
+    padding: 0;
+
+    border: 1px solid rgba(255, 193, 7, 0.35);
+
+    border-radius: 50%;
+
+    background: #ffc107;
+
+    cursor: pointer;
+
+    z-index: 99999;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    box-shadow:
+        0 10px 35px rgba(255, 193, 7, 0.35);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.dfte-pro-launcher:hover {
+    transform: scale(1.06);
+
+    box-shadow:
+        0 12px 40px rgba(255, 193, 7, 0.48);
+}
+
+.dfte-pro-launcher img {
+    width: 53px;
+    height: 53px;
+
+    object-fit: contain;
+
+    border-radius: 50%;
+}
+
+
+/* =========================================================
+   CHAT WINDOW
+   ========================================================= */
+
+.dfte-pro-window {
+    position: fixed;
+
+    right: 24px;
+    bottom: 105px;
+
+    width: 400px;
+    height: 620px;
+
+    max-width: calc(100vw - 30px);
+    max-height: calc(100vh - 125px);
+
+    display: none;
+
+    flex-direction: column;
+
+    overflow: hidden;
+
+    background: #050914;
+
+    border:
+        1px solid rgba(255, 193, 7, 0.28);
+
+    border-radius: 20px;
+
+    z-index: 99998;
+
+    box-shadow:
+        0 24px 70px rgba(0, 0, 0, 0.42);
+}
+
+.dfte-pro-window.active {
+    display: flex;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.dfte-pro-header {
+    min-height: 76px;
+
+    padding: 12px 15px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    background: #08111f;
+
+    border-bottom:
+        1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dfte-pro-brand {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+}
+
+.dfte-pro-logo {
+    width: 46px;
+    height: 46px;
+
+    border-radius: 13px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background: #050914;
+
+    border:
+        1px solid rgba(255, 193, 7, 0.35);
+
+    overflow: hidden;
+}
+
+.dfte-pro-logo img {
+    width: 40px;
+    height: 40px;
+
+    object-fit: contain;
+}
+
+.dfte-pro-title {
+    color: #ffffff;
+
+    font-size: 14px;
+
+    font-weight: 700;
+}
+
+.dfte-pro-status {
+    color: #65d391;
+
+    font-size: 11px;
+
+    margin-top: 4px;
+}
+
+.dfte-pro-close {
+    border: none;
+
+    background: transparent;
+
+    color: #aeb5c0;
+
+    font-size: 27px;
+
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   BODY
+   ========================================================= */
+
+.dfte-pro-body {
+    flex: 1;
+
+    min-height: 0;
+
+    overflow-y: auto;
+
+    padding: 18px;
+}
+
+
+/* =========================================================
+   LANGUAGE SCREEN
+   ========================================================= */
+
+.dfte-pro-language-screen {
+    display: block;
+}
+
+.dfte-pro-welcome-avatar {
+    width: 82px;
+    height: 82px;
+
+    margin:
+        2px auto 16px;
+
+    border-radius: 50%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background: #ffc107;
+
+    box-shadow:
+        0 8px 28px rgba(255, 193, 7, 0.22);
+
+    overflow: hidden;
+}
+
+.dfte-pro-welcome-avatar img {
+    width: 70px;
+    height: 70px;
+
+    object-fit: contain;
+}
+
+.dfte-pro-language-screen h2 {
+    margin: 0 0 8px;
+
+    color: #ffffff;
+
+    font-size: 25px;
+}
+
+.dfte-pro-language-screen p {
+    margin: 0 0 22px;
+
+    color: #aeb7c7;
+
+    font-size: 13px;
+
+    line-height: 1.65;
+}
+
+.dfte-pro-language-question {
+    color: #ffffff;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    margin-bottom: 14px;
+}
+
+.dfte-pro-language-question span {
+    font-weight: 400;
+}
+
+.dfte-pro-language-buttons {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+.dfte-pro-language-btn {
+    width: 100%;
+
+    min-height: 52px;
+
+    padding: 0 16px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    border:
+        1px solid rgba(255, 193, 7, 0.25);
+
+    border-radius: 14px;
+
+    background: #07101f;
+
+    color: #ffffff;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.dfte-pro-language-btn:hover {
+    background: #0d1829;
+
+    border-color: #ffc107;
+
+    transform: translateY(-1px);
+}
+
+.dfte-pro-language-btn .flag {
+    font-size: 18px;
+}
+
+
+/* =========================================================
+   CHAT SCREEN
+   ========================================================= */
+
+.dfte-pro-chat-screen {
+    display: none;
+}
+
+.dfte-pro-chat-screen.active {
+    display: block;
+}
+
+.dfte-pro-messages {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 11px;
+}
+
+
+/* =========================================================
+   MESSAGES
+   ========================================================= */
+
+.dfte-pro-message {
+    display: flex;
+}
+
+.dfte-pro-message.user {
+    justify-content: flex-end;
+}
+
+.dfte-pro-message.bot {
+    justify-content: flex-start;
+}
+
+.dfte-pro-bubble {
+    max-width: 84%;
+
+    padding: 11px 13px;
+
+    border-radius: 14px;
+
+    color: #f1f3f7;
+
+    font-size: 13px;
+
+    line-height: 1.55;
+
+    white-space: pre-wrap;
+}
+
+.dfte-pro-message.user .dfte-pro-bubble {
+    background: #ffc107;
+
+    color: #111111;
+
+    border-bottom-right-radius: 4px;
+}
+
+.dfte-pro-message.bot .dfte-pro-bubble {
+    background: #0b1627;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.06);
+
+    border-bottom-left-radius: 4px;
+}
+
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+.dfte-pro-footer {
+    padding: 10px;
+
+    background: #08111f;
+
+    border-top:
+        1px solid rgba(255, 255, 255, 0.07);
+}
+
+.dfte-pro-input-row {
+    display: flex;
+
+    gap: 8px;
+}
+
+.dfte-pro-input {
+    flex: 1;
+
+    min-width: 0;
+
+    resize: none;
+
+    border:
+        1px solid rgba(255, 255, 255, 0.1);
+
+    border-radius: 12px;
+
+    background: #0a1422;
+
+    color: #ffffff;
+
+    padding: 11px;
+
+    outline: none;
+
+    font-size: 13px;
+}
+
+.dfte-pro-input:focus {
+    border-color:
+        rgba(255, 193, 7, 0.5);
+}
+
+.dfte-pro-send {
+    width: 44px;
+    height: 44px;
+
+    border: none;
+
+    border-radius: 12px;
+
+    background: #ffc107;
+
+    color: #111111;
+
+    cursor: pointer;
+
+    font-size: 16px;
+}
+
+.dfte-pro-send:disabled {
+    opacity: 0.5;
+
+    cursor: not-allowed;
+}
+
+.dfte-pro-footer-text {
+    text-align: center;
+
+    color: #596678;
+
+    font-size: 9px;
+
+    margin-top: 6px;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+    .dfte-pro-launcher {
+        right: 15px;
+        bottom: 15px;
+
+        width: 62px;
+        height: 62px;
+    }
+
+    .dfte-pro-launcher-message {
+        right: 15px;
+        bottom: 88px;
+    }
+
+    .dfte-pro-window {
+        right: 8px;
+        bottom: 88px;
+
+        width: calc(100vw - 16px);
+
+        height: calc(100vh - 105px);
+    }
+}
+
+.dfte-pro-bubble[dir="rtl"] {
+    direction: rtl;
+    text-align: right;
+    unicode-bidi: plaintext;
+    font-family:
+        "Noto Nastaliq Urdu",
+        "Noto Naskh Arabic",
+        "Segoe UI",
+        Arial,
+        sans-serif;
+}

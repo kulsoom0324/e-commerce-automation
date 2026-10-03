@@ -1,0 +1,772 @@
+/* =========================================================
+   DIGITAL FTE CHATBOT
+   ========================================================= */
+
+#dfte-chatbot-root,
+#dfte-chatbot-root * {
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   FLOATING ROBOT
+   ========================================================= */
+
+.dfte-launcher {
+    position: fixed;
+
+    right: 25px;
+    bottom: 25px;
+
+    width: 72px;
+    height: 72px;
+
+    padding: 0;
+
+    border: none;
+    border-radius: 50%;
+
+    background: #ffc107;
+
+    cursor: pointer;
+
+    z-index: 99999;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    box-shadow:
+        0 8px 30px rgba(255, 193, 7, 0.35);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+
+}
+
+
+.dfte-launcher:hover {
+    transform: scale(1.06);
+
+    box-shadow:
+        0 10px 35px rgba(255, 193, 7, 0.50);
+}
+
+
+.dfte-launcher img {
+    width: 58px;
+    height: 58px;
+
+    object-fit: contain;
+
+    border-radius: 50%;
+}
+
+
+/* =========================================================
+   GREETING BUBBLE
+   ========================================================= */
+
+.dfte-greeting {
+    position: fixed;
+
+    right: 25px;
+    bottom: 108px;
+
+    background: #ffffff;
+
+    color: #111827;
+
+    padding:
+        11px 16px;
+
+    border-radius: 14px;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    box-shadow:
+        0 8px 25px rgba(0, 0, 0, 0.18);
+
+    z-index: 99997;
+
+    cursor: pointer;
+
+}
+
+
+/* Small arrow pointing to robot */
+
+.dfte-greeting::after {
+    content: "";
+
+    position: absolute;
+
+    right: 23px;
+    bottom: -7px;
+
+    width: 14px;
+    height: 14px;
+
+    background: #ffffff;
+
+    transform:
+        rotate(45deg);
+}
+
+
+/* Greeting animation */
+
+@keyframes dfteGreetingIn {
+
+    from {
+        opacity: 0;
+
+        transform:
+            translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+
+        transform:
+            translateY(0);
+    }
+
+}
+
+
+/* Hide greeting */
+
+.dfte-greeting.hidden {
+    display: none;
+}
+
+
+/* =========================================================
+   CHAT WINDOW
+   ========================================================= */
+
+.dfte-window {
+    position: fixed;
+
+    right: 25px;
+    bottom: 110px;
+
+    width: 390px;
+    height: 600px;
+
+    max-width:
+        calc(100vw - 30px);
+
+    max-height:
+        calc(100vh - 130px);
+
+    background: #050914;
+
+    border:
+        1px solid rgba(
+            255,
+            193,
+            7,
+            0.25
+        );
+
+    border-radius: 20px;
+
+    overflow: hidden;
+
+    z-index: 99998;
+
+    box-shadow:
+        0 20px 60px rgba(
+            0,
+            0,
+            0,
+            0.6
+        );
+
+    display: none;
+
+    flex-direction: column;
+}
+
+
+.dfte-window.active {
+    display: flex;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.dfte-header {
+    min-height: 75px;
+
+    padding:
+        12px 15px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    background: #08111f;
+
+    border-bottom:
+        1px solid rgba(
+            255,
+            255,
+            255,
+            0.08
+        );
+}
+
+
+.dfte-brand {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+}
+
+
+.dfte-logo {
+    width: 45px;
+    height: 45px;
+
+    flex-shrink: 0;
+
+    border-radius: 12px;
+
+    background: #050914;
+
+    border:
+        1px solid rgba(
+            255,
+            193,
+            7,
+            0.3
+        );
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    overflow: hidden;
+}
+
+
+.dfte-logo img {
+    width: 40px;
+    height: 40px;
+
+    object-fit: contain;
+
+    border-radius: 50%;
+}
+
+
+.dfte-title {
+    color: #ffffff;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    line-height: 1.3;
+}
+
+
+.dfte-status {
+    color: #65d391;
+
+    font-size: 11px;
+
+    margin-top: 4px;
+}
+
+
+.dfte-close {
+    width: 35px;
+    height: 35px;
+
+    padding: 0;
+
+    background: transparent;
+
+    border: none;
+
+    color: #aaaaaa;
+
+    font-size: 25px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    transition:
+        color 0.2s ease;
+}
+
+
+.dfte-close:hover {
+    color: #ffffff;
+}
+
+
+/* =========================================================
+   BODY
+   ========================================================= */
+
+.dfte-body {
+    flex: 1;
+
+    overflow-y: auto;
+
+    padding: 18px;
+
+    background: #050914;
+}
+
+
+.dfte-body::-webkit-scrollbar {
+    width: 5px;
+}
+
+
+.dfte-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+
+.dfte-body::-webkit-scrollbar-thumb {
+    background: #263244;
+
+    border-radius: 10px;
+}
+
+
+/* =========================================================
+   WELCOME SCREEN
+   ========================================================= */
+
+.dfte-language-screen {
+    padding:
+        8px 2px 20px;
+}
+
+
+.dfte-language-screen h3 {
+    color: #ffffff;
+
+    font-size: 26px;
+
+    font-weight: 700;
+
+    margin:
+        0 0 10px 0;
+}
+
+
+.dfte-language-screen p {
+    color: #aeb7c7;
+
+    font-size: 14px;
+
+    line-height: 1.7;
+
+    margin:
+        0 0 24px 0;
+}
+
+
+.dfte-language-question {
+    color: #ffffff;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    line-height: 1.5;
+
+    margin:
+        0 0 14px 0;
+}
+
+
+.dfte-language-question span {
+    font-weight: 400;
+}
+
+
+/* =========================================================
+   LANGUAGE BUTTONS
+   ========================================================= */
+
+.language-buttons {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+
+.dfte-language-btn {
+    width: 100%;
+
+    min-height: 52px;
+
+    padding:
+        0 16px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    background: #07101f;
+
+    border:
+        1px solid rgba(
+            255,
+            193,
+            7,
+            0.25
+        );
+
+    border-radius: 14px;
+
+    color: #ffffff;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.dfte-language-btn:hover {
+    background: #0d1829;
+
+    border-color: #ffc107;
+
+    transform:
+        translateY(-1px);
+}
+
+
+.dfte-language-btn:active {
+    transform:
+        translateY(0);
+}
+
+
+.dfte-language-btn .flag {
+    font-size: 19px;
+
+    line-height: 1;
+}
+
+
+/* =========================================================
+   MESSAGES
+   ========================================================= */
+
+.dfte-messages {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 12px;
+}
+
+
+.dfte-message {
+    display: flex;
+
+    width: 100%;
+}
+
+
+.dfte-message.user {
+    justify-content: flex-end;
+}
+
+
+.dfte-message.bot {
+    justify-content: flex-start;
+}
+
+
+.dfte-bubble {
+    max-width: 82%;
+
+    padding:
+        11px 13px;
+
+    border-radius: 14px;
+
+    font-size: 13px;
+
+    line-height: 1.55;
+
+    white-space: pre-wrap;
+
+    word-break: break-word;
+}
+
+
+.dfte-message.user
+.dfte-bubble {
+    background: #ffc107;
+
+    color: #111111;
+
+    border-bottom-right-radius: 4px;
+}
+
+
+.dfte-message.bot
+.dfte-bubble {
+    background: #0b1627;
+
+    color: #f1f3f7;
+
+    border:
+        1px solid rgba(
+            255,
+            255,
+            255,
+            0.06
+        );
+
+    border-bottom-left-radius: 4px;
+}
+
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+.dfte-footer {
+    padding: 10px;
+
+    background: #08111f;
+
+    border-top:
+        1px solid rgba(
+            255,
+            255,
+            255,
+            0.07
+        );
+}
+
+
+.dfte-input-row {
+    display: flex;
+
+    gap: 8px;
+
+    align-items: flex-end;
+}
+
+
+.dfte-input {
+    flex: 1;
+
+    min-height: 44px;
+
+    max-height: 100px;
+
+    resize: none;
+
+    border:
+        1px solid rgba(
+            255,
+            255,
+            255,
+            0.1
+        );
+
+    border-radius: 12px;
+
+    background: #0a1422;
+
+    color: #ffffff;
+
+    padding: 11px;
+
+    outline: none;
+
+    font-size: 13px;
+
+    font-family: inherit;
+}
+
+
+.dfte-input::placeholder {
+    color: #667386;
+}
+
+
+.dfte-input:focus {
+    border-color:
+        rgba(
+            255,
+            193,
+            7,
+            0.5
+        );
+}
+
+
+.dfte-send {
+    width: 44px;
+    height: 44px;
+
+    flex-shrink: 0;
+
+    border: none;
+
+    border-radius: 12px;
+
+    background: #ffc107;
+
+    color: #111111;
+
+    cursor: pointer;
+
+    font-size: 18px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease;
+}
+
+
+.dfte-send:hover {
+    transform:
+        scale(1.04);
+
+    background: #ffca28;
+}
+
+
+.dfte-send:disabled {
+    opacity: 0.5;
+
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+
+.dfte-footer-text {
+    text-align: center;
+
+    color: #596678;
+
+    font-size: 9px;
+
+    margin-top: 6px;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+    .dfte-launcher {
+        right: 15px;
+
+        bottom: 15px;
+
+        width: 65px;
+
+        height: 65px;
+    }
+
+
+    .dfte-launcher img {
+        width: 52px;
+
+        height: 52px;
+    }
+
+
+    .dfte-greeting {
+        right: 15px;
+
+        bottom: 92px;
+
+        font-size: 12px;
+
+        padding:
+            10px 14px;
+    }
+
+
+    .dfte-window {
+        right: 8px;
+
+        bottom: 90px;
+
+        width:
+            calc(100vw - 16px);
+
+        height:
+            calc(100vh - 110px);
+
+        max-width: none;
+
+        max-height: none;
+
+        border-radius: 18px;
+    }
+
+
+    .dfte-header {
+        min-height: 70px;
+    }
+
+
+    .dfte-body {
+        padding: 16px;
+    }
+
+}
