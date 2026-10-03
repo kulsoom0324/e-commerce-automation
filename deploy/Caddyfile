@@ -1,0 +1,11 @@
+# Caddy gets and renews free HTTPS certificates automatically.
+# DNS for both names must point to this server before the first start.
+{$APP_DOMAIN} {
+	encode gzip
+	reverse_proxy frontend:3000
+}
+
+{$API_DOMAIN} {
+	encode gzip
+	reverse_proxy backend:8000
+}
