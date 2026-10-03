@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useGoogleLogin } from "@react-oauth/google";
+import { GoogleLogin } from "@react-oauth/google";
 import { 
   Mail, 
   Lock, 
@@ -43,7 +43,6 @@ import {
   Cpu,
   HelpCircle,
   ChevronDown,
-  Star,
 } from "lucide-react";
 import { InteractiveRobot } from "./components/InteractiveRobot";
 import { LaunchActivationScreen } from "./components/onboarding/LaunchActivationScreen";
@@ -151,6 +150,7 @@ export default function AuthPage() {
   // Add a toast notification helper
   const PAGE_STATE_KEY = "digital-fte-page-state";
   const AUTH_STORAGE_KEY = "digital-fte-auth";
+  const TOKEN_STORAGE_KEY = "digital-fte-access-token";
 
   const showToast = (message: string, type: "success" | "info" | "error" = "success") => {
     const id = Date.now().toString();
@@ -351,7 +351,7 @@ export default function AuthPage() {
 
   const handleOAuth = (platform: "shopify" | "google") => {
     if (platform === "google") {
-      googleLogin();
+      showToast("Google login is not configured (set NEXT_PUBLIC_GOOGLE_CLIENT_ID).", "error");
     } else {
       showToast(`Initializing secure OAuth with Shopify App Store...`, "info");
       setLoading(true);
@@ -363,54 +363,64 @@ export default function AuthPage() {
     }
   };
 
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (codeResponse) => {
-      showToast("Authenticating with Google...", "info");
-      setLoading(true);
-      
-      try {
-        const response = await fetch("https://www.googleapis.com/oauth2/v1/userinfo", {
-          headers: { Authorization: `Bearer ${codeResponse.access_token}` },
-        });
-        const userInfo = await response.json();
-        
-        const googleUserEmail = normalizeUserEmail(userInfo.email);
+  // Backend auth helpers -------------------------------------------------
+  const GOOGLE_CONFIGURED = Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
 
-        // Directly enter onboarding flow (sets authenticatedUser + onboardingStep together,
-        // same as manual login) — avoids an empty "step 1" flash before step 2 renders.
-        setTimeout(() => {
-          enterOnboardingFlow(googleUserEmail, `Welcome ${userInfo.name || "there"}! Successfully logged in with Google.`);
-        }, 1500);
-        
-        try {
-          await fetch(buildApiUrl("/api/auth/google"), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email: userInfo.email,
-              name: userInfo.name,
-              picture: userInfo.picture,
-              googleId: userInfo.id,
-            }),
-          });
-        } catch (error) {
-          console.log("Backend sync optional:", error);
-        }
-      } catch (error) {
-        setLoading(false);
-        showToast("Google authentication failed. Please try again.", "error");
-        console.error("Google login error:", error);
-      }
-    },
-    onError: () => {
+  const saveAccessToken = (token?: string | null) => {
+    try {
+      if (token) window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    } catch { }
+  };
+
+  // POST JSON to the backend; returns the parsed body or throws Error(message).
+  const postAuth = async (path: string, body: Record<string, unknown>) => {
+    let res: Response;
+    try {
+      res = await fetch(buildApiUrl(path), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    } catch {
+      throw new Error("Cannot reach the server. Please check your connection and try again.");
+    }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const detail = data?.detail;
+      const message = Array.isArray(detail)
+        ? detail.map((d: { msg?: string }) => (d.msg || "").replace(/^Value error, /, "")).filter(Boolean).join(". ")
+        : typeof detail === "string"
+          ? detail
+          : "";
+      throw new Error(message || `Request failed (${res.status})`);
+    }
+    return data as { message?: string; access_token?: string; user: { email: string; full_name?: string | null } };
+  };
+
+  const handleGoogleCredential = async (credential?: string) => {
+    if (!credential) {
       showToast("Google login failed. Please try again.", "error");
-    },
-    flow: "implicit",
-  });
+      return;
+    }
+    showToast("Authenticating with Google...", "info");
+    setLoading(true);
+    try {
+      const data = await postAuth("/auth/google", { id_token: credential });
+      saveAccessToken(data.access_token);
+      enterOnboardingFlow(
+        data.user.email,
+        `Welcome ${data.user.full_name || "there"}! Successfully logged in with Google.`
+      );
+    } catch (error) {
+      setLoading(false);
+      showToast(error instanceof Error ? error.message : "Google authentication failed.", "error");
+    }
+  };
 
-  const handleAuthSubmit = (e: React.FormEvent) => {
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) {
+    const cleanEmail = email.trim();
+    if (!cleanEmail) {
       showToast("Please enter a valid email address.", "error");
       return;
     }
@@ -418,22 +428,47 @@ export default function AuthPage() {
       showToast("Please enter your full name.", "error");
       return;
     }
-    if (!password || password.length < 6) {
-      showToast("Password must be at least 6 characters long.", "error");
+    if (!password || password.length < 8) {
+      showToast("Password must be at least 8 characters long.", "error");
+      return;
+    }
+    if (
+      authMode === "signup" &&
+      !(/\d/.test(password) && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[^A-Za-z0-9]/.test(password))
+    ) {
+      showToast("Password needs an uppercase letter, a lowercase letter, a digit and a special character.", "error");
       return;
     }
 
     setLoading(true);
     showToast(authMode === "signin" ? "Verifying secure credentials..." : "Provisioning Digital FTE container instance...", "info");
-    
-    setTimeout(() => {
+
+    try {
+      let data;
+      if (authMode === "signin") {
+        data = await postAuth("/auth/login", { email: cleanEmail, password });
+      } else {
+        // Backend requires a username (3-50 chars); the form has none, so derive one from the email.
+        const base = cleanEmail.split("@")[0].replace(/[^A-Za-z0-9_.-]/g, "").slice(0, 44) || "user";
+        const username = base.length >= 3 ? base : base.padEnd(3, "0");
+        data = await postAuth("/auth/signup", {
+          username,
+          email: cleanEmail,
+          password,
+          full_name: fullName.trim() || null,
+        });
+      }
+      saveAccessToken(data.access_token);
       enterOnboardingFlow(
-        email,
+        data.user.email,
         authMode === "signin"
           ? "Login successful! Let's set up your store."
           : "Account created! Let's set up your store."
       );
-    }, 2000);
+    } catch (error) {
+      setLoading(false);
+      showToast(error instanceof Error ? error.message : "Authentication failed.", "error");
+    }
   };
 
   const handleForgotSubmit = (e: React.FormEvent) => {
@@ -478,7 +513,10 @@ export default function AuthPage() {
     setShowSettingsModal(false);
     setShowSEOModal(false);
     setActiveTab('dashboard');
-    try { window.localStorage.removeItem(AUTH_STORAGE_KEY); } catch { }
+    try {
+      window.localStorage.removeItem(AUTH_STORAGE_KEY);
+      window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+    } catch { }
     showToast("Logged out successfully.", "info");
   };
 
@@ -2306,6 +2344,17 @@ export default function AuthPage() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 mb-6">
+                  {GOOGLE_CONFIGURED ? (
+                    <div className={`flex justify-center ${loading ? "pointer-events-none opacity-50" : ""}`}>
+                      <GoogleLogin
+                        onSuccess={(res) => handleGoogleCredential(res.credential)}
+                        onError={() => showToast("Google login failed. Please try again.", "error")}
+                        theme="filled_black"
+                        shape="pill"
+                        text={authMode === "signin" ? "signin_with" : "signup_with"}
+                      />
+                    </div>
+                  ) : (
                   <button
                     type="button"
                     onClick={() => handleOAuth("google")}
@@ -2322,6 +2371,7 @@ export default function AuthPage() {
                       </>
                     )}
                   </button>
+                  )}
                 </div>
 
                 <div className="relative flex py-2 items-center mb-6">
